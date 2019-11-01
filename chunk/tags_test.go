@@ -18,10 +18,12 @@ package chunk
 
 import (
 	"testing"
+
+	"github.com/ethersphere/swarm/testutil"
 )
 
 func TestAll(t *testing.T) {
-	ts := NewTags()
+	ts := NewTags(testutil.NoopStateStorePut)
 	ts.Create("1", 1, false)
 	ts.Create("2", 1, false)
 

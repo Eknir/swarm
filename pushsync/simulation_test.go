@@ -43,6 +43,7 @@ import (
 	"github.com/ethersphere/swarm/pss"
 	"github.com/ethersphere/swarm/storage"
 	"github.com/ethersphere/swarm/storage/localstore"
+	"github.com/ethersphere/swarm/testutil"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -176,7 +177,7 @@ func newServiceFunc(ctx *adapters.ServiceContext, bucket *sync.Map) (node.Servic
 		return nil, nil, err
 	}
 
-	tags := chunk.NewTags()
+	tags := chunk.NewTags(testutil.NoopStateStorePut)
 
 	lstore, err := localstore.New(dir, addr.Over(), &localstore.Options{
 		Tags: tags,

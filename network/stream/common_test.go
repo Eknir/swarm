@@ -121,7 +121,7 @@ func newSyncSimServiceFunc(o *SyncSimServiceOptions) func(ctx *adapters.ServiceC
 
 		netStore := storage.NewNetStore(localStore, kad.BaseAddr(), n.ID())
 		lnetStore := storage.NewLNetStore(netStore)
-		fileStore := storage.NewFileStore(lnetStore, lnetStore, storage.NewFileStoreParams(), chunk.NewTags())
+		fileStore := storage.NewFileStore(lnetStore, lnetStore, storage.NewFileStoreParams(), chunk.NewTags(testutil.NoopStateStorePut))
 		bucket.Store(bucketKeyFileStore, fileStore)
 		bucket.Store(bucketKeyLocalStore, localStore)
 

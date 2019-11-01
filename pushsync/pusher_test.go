@@ -280,7 +280,7 @@ func delayResponse() bool {
 // the sequential fake chunk i will be tagged with i%tagCnt
 func setupTags(chunkCnt, tagCnt int) (tags *chunk.Tags, tagIDs []uint32) {
 	// construct tags object
-	tags = chunk.NewTags()
+	tags = chunk.NewTags(testutil.NoopStateStorePut)
 	// all but one tag is created
 	for i := 0; i < tagCnt-1; i++ {
 		tags.Create("", int64(chunkCnt/tagCnt), false)

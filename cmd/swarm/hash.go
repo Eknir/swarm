@@ -28,6 +28,7 @@ import (
 	"github.com/ethersphere/swarm/chunk"
 	"github.com/ethersphere/swarm/contracts/ens"
 	"github.com/ethersphere/swarm/storage"
+	"github.com/ethersphere/swarm/testutil"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -78,7 +79,7 @@ func hash(ctx *cli.Context) {
 	defer f.Close()
 
 	stat, _ := f.Stat()
-	fileStore := storage.NewFileStore(&storage.FakeChunkStore{}, &storage.FakeChunkStore{}, storage.NewFileStoreParams(), chunk.NewTags())
+	fileStore := storage.NewFileStore(&storage.FakeChunkStore{}, &storage.FakeChunkStore{}, storage.NewFileStoreParams(), chunk.NewTags(testutil.NoopStateStorePut))
 
 	addr, _, err := fileStore.Store(context.TODO(), f, stat.Size(), false)
 	if err != nil {

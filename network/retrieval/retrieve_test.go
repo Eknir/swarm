@@ -489,7 +489,7 @@ func newBzzRetrieveWithLocalstore(ctx *adapters.ServiceContext, bucket *sync.Map
 
 	netStore := storage.NewNetStore(localStore, kad.BaseAddr(), n.ID())
 	lnetStore := storage.NewLNetStore(netStore)
-	fileStore := storage.NewFileStore(lnetStore, lnetStore, storage.NewFileStoreParams(), chunk.NewTags())
+	fileStore := storage.NewFileStore(lnetStore, lnetStore, storage.NewFileStoreParams(), chunk.NewTags(testutil.NoopStateStorePut))
 
 	var store *state.DBStore
 	// Use on-disk DBStore to reduce memory consumption in race tests.
@@ -548,7 +548,7 @@ func getAllRefs(testData []byte) (storage.AddressCollection, error) {
 		return nil, err
 	}
 	defer os.RemoveAll(datadir)
-	fileStore, cleanup, err := storage.NewLocalFileStore(datadir, make([]byte, 32), chunk.NewTags())
+	fileStore, cleanup, err := storage.NewLocalFileStore(datadir, make([]byte, 32), chunk.NewTags(testutil.NoopStateStorePut))
 	if err != nil {
 		return nil, err
 	}

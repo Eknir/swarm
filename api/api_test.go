@@ -50,7 +50,7 @@ func testAPI(t *testing.T, f func(*API, *chunk.Tags, bool)) {
 			t.Fatalf("unable to create temp dir: %v", err)
 		}
 		defer os.RemoveAll(datadir)
-		tags := chunk.NewTags()
+		tags := chunk.NewTags(testutil.NoopStateStorePut)
 		fileStore, cleanup, err := storage.NewLocalFileStore(datadir, make([]byte, 32), tags)
 		if err != nil {
 			return
@@ -436,7 +436,7 @@ func TestDecryptOriginForbidden(t *testing.T) {
 		Access: &AccessEntry{Type: AccessTypePass},
 	}
 
-	api := NewAPI(nil, nil, nil, nil, chunk.NewTags())
+	api := NewAPI(nil, nil, nil, nil, chunk.NewTags(testutil.NoopStateStorePut))
 
 	f := api.Decryptor(ctx, "")
 	err := f(me)
@@ -470,7 +470,7 @@ func TestDecryptOrigin(t *testing.T) {
 			Access: &AccessEntry{Type: AccessTypePass},
 		}
 
-		api := NewAPI(nil, nil, nil, nil, chunk.NewTags())
+		api := NewAPI(nil, nil, nil, nil, chunk.NewTags(testutil.NoopStateStorePut))
 
 		f := api.Decryptor(ctx, "")
 		err := f(me)

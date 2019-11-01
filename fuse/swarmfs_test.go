@@ -1605,12 +1605,12 @@ func TestFUSE(t *testing.T) {
 	}
 	defer os.RemoveAll(datadir)
 
-	fileStore, cleanup, err := storage.NewLocalFileStore(datadir, make([]byte, 32), chunk.NewTags())
+	fileStore, cleanup, err := storage.NewLocalFileStore(datadir, make([]byte, 32), chunk.NewTags(testutil.NoopStateStorePut))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer cleanup()
-	ta := &testAPI{api: api.NewAPI(fileStore, nil, nil, nil, chunk.NewTags())}
+	ta := &testAPI{api: api.NewAPI(fileStore, nil, nil, nil, chunk.NewTags(testutil.NoopStateStorePut))}
 
 	//run a short suite of tests
 	//approx time: 28s

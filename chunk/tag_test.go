@@ -21,6 +21,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/ethersphere/swarm/testutil"
 )
 
 var (
@@ -136,7 +138,7 @@ func TestTagConcurrentIncrements(t *testing.T) {
 
 // TestTagsMultipleConcurrentIncrements tests Inc calls concurrently
 func TestTagsMultipleConcurrentIncrementsSyncMap(t *testing.T) {
-	ts := NewTags()
+	ts := NewTags(testutil.NoopStateStorePut)
 	n := 100
 	wg := sync.WaitGroup{}
 	wg.Add(10 * 5 * n)

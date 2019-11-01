@@ -230,7 +230,7 @@ func getPinApiAndFileStore(t *testing.T) (*API, *storage.FileStore, func()) {
 	if err != nil {
 		t.Fatalf("could not create localstore. Error: %s", err.Error())
 	}
-	tags := chunk.NewTags()
+	tags := chunk.NewTags(testutil.NoopStateStorePut)
 	fileStore := storage.NewFileStore(lStore, lStore, storage.NewFileStoreParams(), tags)
 
 	// Swarm feeds test setup

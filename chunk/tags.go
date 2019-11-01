@@ -27,20 +27,25 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethersphere/swarm/log"
 	"github.com/ethersphere/swarm/sctx"
 )
 
 var TagUidFunc = rand.Uint32
 
+type persistFn func(key string, v interface{}) error
+
 // Tags hold tag information indexed by a unique random uint32
 type Tags struct {
-	tags *sync.Map
+	tags        *sync.Map
+	persistFunc persistFn // a pluggable function to persist tags
 }
 
 // NewTags creates a tags object
-func NewTags() *Tags {
+func NewTags(fn persistFn) *Tags {
 	return &Tags{
-		tags: &sync.Map{},
+		tags:        &sync.Map{},
+		persistFunc: fn,
 	}
 }
 
@@ -51,6 +56,11 @@ func (ts *Tags) Create(s string, total int64, anon bool) (*Tag, error) {
 
 	if _, loaded := ts.tags.LoadOrStore(t.Uid, t); loaded {
 		return nil, errExists
+	}
+
+	err := ts.Persist()
+	if err != nil {
+		log.Error("had an error while persisting tags on delete", "err", err)
 	}
 
 	return t, nil
@@ -113,6 +123,14 @@ func (ts *Tags) Range(fn func(k, v interface{}) bool) {
 
 func (ts *Tags) Delete(k interface{}) {
 	ts.tags.Delete(k)
+	err := ts.Persist()
+	if err != nil {
+		log.Error("had an error while persisting tags on delete", "err", err)
+	}
+}
+
+func (ts *Tags) Persist() error {
+	return ts.persistFunc("tags", ts)
 }
 
 func (ts *Tags) MarshalJSON() (out []byte, err error) {

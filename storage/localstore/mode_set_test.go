@@ -23,6 +23,7 @@ import (
 
 	"github.com/ethersphere/swarm/chunk"
 	"github.com/ethersphere/swarm/shed"
+	"github.com/ethersphere/swarm/testutil"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -175,7 +176,7 @@ func TestModeSetSyncPull(t *testing.T) {
 		t.Run(mtc.name, func(t *testing.T) {
 			for _, tc := range multiChunkTestCases {
 				t.Run(tc.name, func(t *testing.T) {
-					db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags()})
+					db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 					defer cleanupFunc()
 
 					tag, err := db.tags.Create(mtc.name, int64(tc.count), mtc.anonymous)
@@ -246,7 +247,7 @@ func TestModeSetSyncPull(t *testing.T) {
 // as a result we should expect the tag value to remain in the pull index
 // and we expect that the tag should not be incremented by pull sync set
 func TestModeSetSyncPullNormalTag(t *testing.T) {
-	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags()})
+	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 	defer cleanupFunc()
 
 	tag, err := db.tags.Create("test", 1, false)
@@ -310,7 +311,7 @@ func TestModeSetSyncPullNormalTag(t *testing.T) {
 }
 
 func TestModeSetSyncPullAnonymousTag(t *testing.T) {
-	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags()})
+	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 	defer cleanupFunc()
 
 	tag, err := db.tags.Create("test", 1, true)
@@ -374,7 +375,7 @@ func TestModeSetSyncPullAnonymousTag(t *testing.T) {
 }
 
 func TestModeSetSyncPullPushAnonymousTag(t *testing.T) {
-	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags()})
+	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 	defer cleanupFunc()
 
 	tag, err := db.tags.Create("test", 1, true)
@@ -454,7 +455,7 @@ func TestModeSetSyncPullPushAnonymousTag(t *testing.T) {
 }
 
 func TestModeSetSyncPushNormalTag(t *testing.T) {
-	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags()})
+	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 	defer cleanupFunc()
 
 	tag, err := db.tags.Create("test", 1, false)

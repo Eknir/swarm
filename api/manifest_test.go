@@ -27,6 +27,7 @@ import (
 
 	"github.com/ethersphere/swarm/chunk"
 	"github.com/ethersphere/swarm/storage"
+	"github.com/ethersphere/swarm/testutil"
 )
 
 func manifest(paths ...string) (manifestReader storage.LazySectionReader) {
@@ -43,7 +44,7 @@ func manifest(paths ...string) (manifestReader storage.LazySectionReader) {
 
 func testGetEntry(t *testing.T, path, match string, multiple bool, paths ...string) *manifestTrie {
 	quitC := make(chan bool)
-	fileStore := storage.NewFileStore(nil, nil, storage.NewFileStoreParams(), chunk.NewTags())
+	fileStore := storage.NewFileStore(nil, nil, storage.NewFileStoreParams(), chunk.NewTags(testutil.NoopStateStorePut))
 	ref := make([]byte, fileStore.HashSize())
 	trie, err := readManifest(manifest(paths...), ref, fileStore, false, quitC, NOOPDecrypt)
 	if err != nil {
@@ -100,7 +101,7 @@ func TestGetEntry(t *testing.T) {
 func TestExactMatch(t *testing.T) {
 	quitC := make(chan bool)
 	mf := manifest("shouldBeExactMatch.css", "shouldBeExactMatch.css.map")
-	fileStore := storage.NewFileStore(nil, nil, storage.NewFileStoreParams(), chunk.NewTags())
+	fileStore := storage.NewFileStore(nil, nil, storage.NewFileStoreParams(), chunk.NewTags(testutil.NoopStateStorePut))
 	ref := make([]byte, fileStore.HashSize())
 	trie, err := readManifest(mf, ref, fileStore, false, quitC, nil)
 	if err != nil {
@@ -133,7 +134,7 @@ func TestAddFileWithManifestPath(t *testing.T) {
 	reader := &storage.LazyTestSectionReader{
 		SectionReader: io.NewSectionReader(bytes.NewReader(manifest), 0, int64(len(manifest))),
 	}
-	fileStore := storage.NewFileStore(nil, nil, storage.NewFileStoreParams(), chunk.NewTags())
+	fileStore := storage.NewFileStore(nil, nil, storage.NewFileStoreParams(), chunk.NewTags(testutil.NoopStateStorePut))
 	ref := make([]byte, fileStore.HashSize())
 	trie, err := readManifest(reader, ref, fileStore, false, nil, NOOPDecrypt)
 	if err != nil {

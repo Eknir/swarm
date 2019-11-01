@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethersphere/swarm/chunk"
 	"github.com/ethersphere/swarm/storage"
+	"github.com/ethersphere/swarm/testutil"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -48,7 +49,7 @@ func hashes(ctx *cli.Context) {
 	}
 	defer f.Close()
 
-	fileStore := storage.NewFileStore(&storage.FakeChunkStore{}, &storage.FakeChunkStore{}, storage.NewFileStoreParams(), chunk.NewTags())
+	fileStore := storage.NewFileStore(&storage.FakeChunkStore{}, &storage.FakeChunkStore{}, storage.NewFileStoreParams(), chunk.NewTags(testutil.NoopStateStorePut))
 	refs, err := fileStore.GetAllReferences(context.TODO(), f)
 	if err != nil {
 		utils.Fatalf("%v\n", err)

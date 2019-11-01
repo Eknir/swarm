@@ -194,11 +194,11 @@ func NewSwarm(config *api.Config, mockStore *mock.NodeStore) (self *Swarm, err e
 	fhParams := &feed.HandlerParams{}
 
 	feedsHandler = feed.NewHandler(fhParams)
-	self.tags = chunk.NewTags()
+	self.tags = chunk.NewTags(self.stateStore.Put)
 	err = self.stateStore.Get("tags", self.tags)
 	if err != nil {
 		if err == state.ErrNotFound {
-			self.tags = chunk.NewTags()
+			self.tags = chunk.NewTags(self.stateStore.Put)
 		} else {
 			return nil, err
 		}
@@ -497,7 +497,7 @@ func (s *Swarm) Stop() error {
 	}
 
 	if s.tags != nil {
-		err := s.stateStore.Put("tags", s.tags)
+		err := s.tags.Persist()
 		if err != nil {
 			log.Error("had an error persisting tags", "err", err)
 		}

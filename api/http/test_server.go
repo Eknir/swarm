@@ -31,6 +31,7 @@ import (
 	"github.com/ethersphere/swarm/storage/feed"
 	"github.com/ethersphere/swarm/storage/localstore"
 	"github.com/ethersphere/swarm/storage/pin"
+	"github.com/ethersphere/swarm/testutil"
 )
 
 type TestServer interface {
@@ -56,7 +57,7 @@ func NewTestSwarmServer(t *testing.T, serverFunc func(*api.API, *pin.API) TestSe
 		t.Fatal(err)
 	}
 
-	tags := chunk.NewTags()
+	tags := chunk.NewTags(testutil.NoopStateStorePut)
 	fileStore := storage.NewFileStore(localStore, localStore, storage.NewFileStoreParams(), tags)
 
 	// Swarm feeds test setup
