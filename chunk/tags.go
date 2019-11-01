@@ -38,7 +38,6 @@ type persistFn func(key string, v interface{}) error
 type Tags struct {
 	mtx         sync.RWMutex
 	tags        map[uint32]*Tag
-	dirty       bool      // indicates whether the persisted tags are dirty
 	persistFunc persistFn // a pluggable function to persist tags
 }
 
