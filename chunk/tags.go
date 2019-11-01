@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -37,14 +36,18 @@ type persistFn func(key string, v interface{}) error
 
 // Tags hold tag information indexed by a unique random uint32
 type Tags struct {
-	tags        *sync.Map
+	mtx         sync.RWMutex
+	tags        map[uint32]*Tag
+	dirty       bool      // indicates whether the persisted tags are dirty
 	persistFunc persistFn // a pluggable function to persist tags
 }
 
 // NewTags creates a tags object
+// the supplied persistFn is used for persistence on
+// shutdowns and on checkpoint persistence (on delete and on add)
 func NewTags(fn persistFn) *Tags {
 	return &Tags{
-		tags:        &sync.Map{},
+		tags:        make(map[uint32]*Tag),
 		persistFunc: fn,
 	}
 }
@@ -52,11 +55,14 @@ func NewTags(fn persistFn) *Tags {
 // Create creates a new tag, stores it by the name and returns it
 // it returns an error if the tag with this name already exists
 func (ts *Tags) Create(s string, total int64, anon bool) (*Tag, error) {
+	ts.mtx.Lock()
+	defer ts.mtx.Unlock()
 	t := NewTag(TagUidFunc(), s, total, anon)
 
-	if _, loaded := ts.tags.LoadOrStore(t.Uid, t); loaded {
+	if _, loaded := ts.tags[t.Uid]; loaded {
 		return nil, errExists
 	}
+	ts.tags[t.Uid] = t
 
 	err := ts.Persist()
 	if err != nil {
@@ -69,36 +75,38 @@ func (ts *Tags) Create(s string, total int64, anon bool) (*Tag, error) {
 // All returns all existing tags in Tags' sync.Map
 // Note that tags are returned in no particular order
 func (ts *Tags) All() (t []*Tag) {
-	ts.tags.Range(func(k, v interface{}) bool {
-		t = append(t, v.(*Tag))
-
-		return true
-	})
+	ts.mtx.RLock()
+	defer ts.mtx.RUnlock()
+	for _, v := range ts.tags {
+		t = append(t, v)
+	}
 
 	return t
 }
 
 // Get returns the underlying tag for the uid or an error if not found
 func (ts *Tags) Get(uid uint32) (*Tag, error) {
-	t, ok := ts.tags.Load(uid)
+	ts.mtx.RLock()
+	defer ts.mtx.RUnlock()
+	t, ok := ts.tags[uid]
 	if !ok {
-		return nil, errors.New("tag not found")
+		return nil, errTagNotFound
 	}
-	return t.(*Tag), nil
+	return t, nil
 }
 
 // GetByAddress returns the latest underlying tag for the address or an error if not found
-func (ts *Tags) GetByAddress(address Address) (*Tag, error) {
-	var t *Tag
+func (ts *Tags) GetByAddress(address Address) (t *Tag, err error) {
+	ts.mtx.RLock()
+	defer ts.mtx.RUnlock()
 	var lastTime time.Time
-	ts.tags.Range(func(key interface{}, value interface{}) bool {
-		rcvdTag := value.(*Tag)
+	for _, value := range ts.tags {
+		rcvdTag := value
 		if bytes.Equal(rcvdTag.Address, address) && rcvdTag.StartedAt.After(lastTime) {
 			t = rcvdTag
 			lastTime = rcvdTag.StartedAt
 		}
-		return true
-	})
+	}
 
 	if t == nil {
 		return nil, errTagNotFound
@@ -108,27 +116,39 @@ func (ts *Tags) GetByAddress(address Address) (*Tag, error) {
 
 // GetFromContext gets a tag from the tag uid stored in the context
 func (ts *Tags) GetFromContext(ctx context.Context) (*Tag, error) {
+	ts.mtx.RLock()
+	defer ts.mtx.RUnlock()
 	uid := sctx.GetTag(ctx)
-	t, ok := ts.tags.Load(uid)
+	t, ok := ts.tags[uid]
 	if !ok {
 		return nil, errTagNotFound
 	}
-	return t.(*Tag), nil
+	return t, nil
 }
 
 // Range exposes sync.Map's iterator
 func (ts *Tags) Range(fn func(k, v interface{}) bool) {
-	ts.tags.Range(fn)
+	for k, v := range ts.tags {
+		cont := fn(k, v)
+		if !cont {
+			return
+		}
+	}
 }
 
-func (ts *Tags) Delete(k interface{}) {
-	ts.tags.Delete(k)
+func (ts *Tags) Delete(k uint32) {
+	ts.mtx.Lock()
+	defer ts.mtx.Unlock()
+
+	delete(ts.tags, k)
 	err := ts.Persist()
 	if err != nil {
 		log.Error("had an error while persisting tags on delete", "err", err)
 	}
 }
 
+// Persist calls the persistFunc with the current tags map
+// the caller is expected to hold the tags.mtx under write lock
 func (ts *Tags) Persist() error {
 	return ts.persistFunc("tags", ts)
 }
@@ -164,7 +184,7 @@ func (ts *Tags) UnmarshalJSON(value []byte) error {
 		// and the node was turned off before the receipt was received
 		v.Sent = v.Synced
 
-		ts.tags.Store(key, v)
+		ts.tags[uint32(key)] = v
 	}
 
 	return err
