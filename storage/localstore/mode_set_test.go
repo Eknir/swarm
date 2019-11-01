@@ -310,6 +310,8 @@ func TestModeSetSyncPullNormalTag(t *testing.T) {
 	}
 }
 
+// TestModeSetSyncPullAnonymousTag checks that pull sync correcly increments
+// counters on an anonymous tag which is expected to be handled only by pull sync
 func TestModeSetSyncPullAnonymousTag(t *testing.T) {
 	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 	defer cleanupFunc()
@@ -374,6 +376,9 @@ func TestModeSetSyncPullAnonymousTag(t *testing.T) {
 	}
 }
 
+// TestModeSetSyncPullPushAnonymousTag creates an anonymous tag and a corresponding chunk
+// then tries to Set both with push and pull Sync modes, but asserts that only the pull sync
+// increments were done to the tag
 func TestModeSetSyncPullPushAnonymousTag(t *testing.T) {
 	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 	defer cleanupFunc()
@@ -407,10 +412,11 @@ func TestModeSetSyncPullPushAnonymousTag(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// expect an error here
+	// expect no error here. if the item cannot be found in pushsync the rest of the
+	// setSync logic should be executed
 	err = db.Set(context.Background(), chunk.ModeSetSyncPush, ch.Address())
-	if err == nil {
-		t.Fatal("expected error but got none")
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// check that the tag has been incremented
@@ -454,6 +460,9 @@ func TestModeSetSyncPullPushAnonymousTag(t *testing.T) {
 	}
 }
 
+// TestModeSetSyncPushNormalTag makes sure that push sync increments tags
+// correctly on a normal tag (that is, a tag that is expected to show progress bars
+// according to push sync progress)
 func TestModeSetSyncPushNormalTag(t *testing.T) {
 	db, cleanupFunc := newTestDB(t, &Options{Tags: chunk.NewTags(testutil.NoopStateStorePut)})
 	defer cleanupFunc()

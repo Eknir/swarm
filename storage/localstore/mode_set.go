@@ -191,9 +191,8 @@ func (db *DB) setSync(batch *leveldb.Batch, addr chunk.Address, mode chunk.ModeS
 		if err == leveldb.ErrNotFound {
 			// chunk is not found,
 			// no need to update gc index
-			// just delete from the push and pull indices
+			// just delete from the push  indices
 			// if it is there
-			db.pullIndex.DeleteInBatch(batch, item)
 			db.pushIndex.DeleteInBatch(batch, item)
 			return 0, nil
 		}
