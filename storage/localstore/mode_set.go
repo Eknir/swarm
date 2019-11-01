@@ -23,6 +23,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethersphere/swarm/chunk"
+	"github.com/ethersphere/swarm/log"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -190,8 +191,9 @@ func (db *DB) setSync(batch *leveldb.Batch, addr chunk.Address, mode chunk.ModeS
 		if err == leveldb.ErrNotFound {
 			// chunk is not found,
 			// no need to update gc index
-			// just delete from the push index
+			// just delete from the push and pull indices
 			// if it is there
+			db.pullIndex.DeleteInBatch(batch, item)
 			db.pushIndex.DeleteInBatch(batch, item)
 			return 0, nil
 		}
@@ -203,18 +205,25 @@ func (db *DB) setSync(batch *leveldb.Batch, addr chunk.Address, mode chunk.ModeS
 	switch mode {
 	case chunk.ModeSetSyncPull:
 		// if we are setting a chunk for pullsync we expect it to be in the index
-		// if it has a tag - we increment it and set the index item to not contain the tag reference
+		// if it has a tag - we increment it and set the index item to _not_ contain the tag reference
 		// this prevents duplicate increments
 		i, err := db.pullIndex.Get(item)
 		if err != nil {
 			if err == leveldb.ErrNotFound {
-				// the chunk is not accessed before
+				// we handle this error internally, since this is an internal inconsistency of the indices
+				// if we return the error here - it means that for example, in stream protocol peers which we sync
+				// to would be dropped. this is possible when the chunk is put with ModePutRequest and ModeSetSyncPull is
+				// called on the same chunk (which should not happen)
+				log.Error("chunk not found in pull index", "addr", addr)
 				break
 			}
+			return 0, err
 		}
 
 		if db.tags != nil && i.Tag != 0 {
 			t, err := db.tags.Get(i.Tag)
+
+			// increment if and only if tag is anonymous
 			if err == nil && t.Anonymous {
 				t.Inc(chunk.StateSent)
 				t.Inc(chunk.StateSynced)
@@ -228,10 +237,24 @@ func (db *DB) setSync(batch *leveldb.Batch, addr chunk.Address, mode chunk.ModeS
 	case chunk.ModeSetSyncPush:
 		i, err := db.pushIndex.Get(item)
 		if err != nil {
+			if err == leveldb.ErrNotFound {
+				// we handle this error internally, since this is an internal inconsistency of the indices
+				// this error can happen if the chunk is put with ModePutRequest or ModePutSync
+				// but this function is called with ModeSetSyncPush
+				log.Error("chunk not found in push index", "addr", addr)
+				break
+			}
 			return 0, err
 		}
 		if db.tags != nil && i.Tag != 0 {
 			t, err := db.tags.Get(i.Tag)
+			if err != nil {
+				// we cannot break or return here since the function needs to
+				// run to end from db.pushIndex.DeleteInBatch
+				log.Error("error getting tags on push sync set", "uid", i.Tag)
+			}
+
+			// setting a chunk for push sync assumes the tag is not anonymous
 			if err == nil && !t.Anonymous {
 				t.Inc(chunk.StateSynced)
 			}
