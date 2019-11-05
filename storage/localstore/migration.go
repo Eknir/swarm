@@ -69,7 +69,6 @@ func getMigrations(currentSchema, targetSchema string, allSchemeMigrations []mig
 		return nil, nil
 	}
 	for i, v := range allSchemeMigrations {
-		v := v
 		switch v.name {
 		case currentSchema:
 			if foundCurrent {

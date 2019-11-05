@@ -44,7 +44,7 @@ func TestOneMigration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupFunc := func() { os.RemoveAll(dir) }
+	defer os.RemoveAll(dir)
 	baseKey := make([]byte, 32)
 	if _, err := rand.Read(baseKey); err != nil {
 		t.Fatal(err)
@@ -53,13 +53,11 @@ func TestOneMigration(t *testing.T) {
 	// start the fresh localstore with the sanctuary schema name
 	db, err := New(dir, baseKey, nil)
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
 	err = db.Close()
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
@@ -68,7 +66,6 @@ func TestOneMigration(t *testing.T) {
 	// start the existing localstore and expect the migration to run
 	db, err = New(dir, baseKey, nil)
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
@@ -93,8 +90,6 @@ func TestOneMigration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	cleanupFunc()
 }
 
 func TestManyMigrations(t *testing.T) {
@@ -131,7 +126,7 @@ func TestManyMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupFunc := func() { os.RemoveAll(dir) }
+	defer os.RemoveAll(dir)
 	baseKey := make([]byte, 32)
 	if _, err := rand.Read(baseKey); err != nil {
 		t.Fatal(err)
@@ -140,13 +135,11 @@ func TestManyMigrations(t *testing.T) {
 	// start the fresh localstore with the sanctuary schema name
 	db, err := New(dir, baseKey, nil)
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
 	err = db.Close()
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
@@ -155,7 +148,6 @@ func TestManyMigrations(t *testing.T) {
 	// start the existing localstore and expect the migration to run
 	db, err = New(dir, baseKey, nil)
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
@@ -182,9 +174,6 @@ func TestManyMigrations(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	cleanupFunc()
-
 }
 
 // TestMigrationFailFrom checks that local store boot should fail when the schema we're migrating from cannot be found
@@ -212,7 +201,7 @@ func TestMigrationFailFrom(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupFunc := func() { os.RemoveAll(dir) }
+	defer os.RemoveAll(dir)
 	baseKey := make([]byte, 32)
 	if _, err := rand.Read(baseKey); err != nil {
 		t.Fatal(err)
@@ -221,13 +210,11 @@ func TestMigrationFailFrom(t *testing.T) {
 	// start the fresh localstore with the sanctuary schema name
 	db, err := New(dir, baseKey, nil)
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
 	err = db.Close()
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
@@ -242,8 +229,6 @@ func TestMigrationFailFrom(t *testing.T) {
 	if shouldNotRun {
 		t.Errorf("migration ran but shouldnt have")
 	}
-
-	cleanupFunc()
 }
 
 // TestMigrationFailTo checks that local store boot should fail when the schema we're migrating to cannot be found
@@ -271,7 +256,7 @@ func TestMigrationFailTo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupFunc := func() { os.RemoveAll(dir) }
+	defer os.RemoveAll(dir)
 	baseKey := make([]byte, 32)
 	if _, err := rand.Read(baseKey); err != nil {
 		t.Fatal(err)
@@ -280,13 +265,11 @@ func TestMigrationFailTo(t *testing.T) {
 	// start the fresh localstore with the sanctuary schema name
 	db, err := New(dir, baseKey, nil)
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
 	err = db.Close()
 	if err != nil {
-		cleanupFunc()
 		t.Fatal(err)
 	}
 
@@ -301,6 +284,4 @@ func TestMigrationFailTo(t *testing.T) {
 	if shouldNotRun {
 		t.Errorf("migration ran but shouldnt have")
 	}
-
-	cleanupFunc()
 }
