@@ -224,9 +224,16 @@ func (db *DB) setSync(batch *leveldb.Batch, addr chunk.Address, mode chunk.ModeS
 
 			// increment if and only if tag is anonymous
 			if err == nil && t.Anonymous {
+				// since pull sync does not guarantee that
+				// a chunk has reached its NN, we can only mark
+				// it as Sent
 				t.Inc(chunk.StateSent)
-				t.Inc(chunk.StateSynced)
+
+				// setting the tag to zero makes sure that
+				// we don't increment the same tag twice when syncing
+				// the same chunk to different peers
 				item.Tag = 0
+
 				err = db.pullIndex.PutInBatch(batch, item)
 				if err != nil {
 					return 0, err
